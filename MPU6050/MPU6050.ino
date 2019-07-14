@@ -6,9 +6,13 @@
 #include <Wire.h>
 const int MPU=0x68;  // I2C address of the MPU-6050
 const int frequence = 250; //Frequence of the loop in hz
+const float max_total_vector = 1.2 ;
 unsigned long loop_timer ; 
 //raw data
-float AcX, AcY, AcZ, GyX, GyY, GyZ;
+float AcX, AcY, AcZ, GyX=0, GyY=0, GyZ=0;
+float X=0, Y=0;
+//Computed data
+
 
 void read_mpu()
 {
@@ -31,12 +35,8 @@ void read_mpu()
     Wire.endTransmission();
     Wire.requestFrom(MPU, 4);
     while(Wire.available()< 4);
-    GyX = Wire.read()<<8|Wire.read();
-    GyY = Wire.read()<<8|Wire.read();
-
-    //Get the true raws values in deg/s according to our setting
-    GyX /= 65.5;
-    GyY /= 65.5;
+    GyX = (Wire.read()<<8|Wire.read())/65.5;
+    GyY = (Wire.read()<<8|Wire.read())/65.5;    
 
 }
 
@@ -66,11 +66,33 @@ void setup()
     Wire.endTransmission();    
 
     Serial.begin(115200);
+    loop_timer = micros();
 
 }
 
 void loop()
 {
     read_mpu();
+    //Compute our raw values
+    float total_vector = sqrt(AcX*AcX + AcY*AcY + AcZ*AcZ);    
+    AcX = asin(AcX/total_vector)*57.32;
+    AcY = asin(AcY/total_vector)*57.32;
+    //Complementary filter now
+
+    
+    X += GyX / frequence ;
+    Y += GyY / frequence ;
+    if(total_vector<max_total_vector)
+    {
+    X = X * 0.98 + AcY * 0.02 ;
+    Y = Y * 0.98 + AcX * 0.02 ;
+    }
+
+    Serial.print(X);
+    Serial.print(" ");
+    Serial.println(Y);
+
+    //We regulate our frequence here
+    while(micros()<loop_timer + 1000*(1/frequence));
 
 }
