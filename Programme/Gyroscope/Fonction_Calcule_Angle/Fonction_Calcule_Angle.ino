@@ -9,12 +9,7 @@ int GyXCal, GyYCal, GyZCal ;
 int temp ;
 
 void angle(){  
-
-   
-
-
-
-    Wire.beginTransmission(MPU);                                   //Start communication with the gyro.
+  Wire.beginTransmission(MPU);                                   //Start communication with the gyro.
     Wire.write(0x3B);                                                       //Start reading @ register 43h and auto increment with every read.
     Wire.endTransmission();                                                 //End the transmission.
     Wire.requestFrom(MPU,14);                                      //Request 14 bytes from the gyro.    
@@ -62,5 +57,3 @@ void loop()
     Serial.println(mpuX);
     delay(100);
 }
-
-
